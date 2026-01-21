@@ -3,10 +3,10 @@ name: Build Rust Project
 on:
   push:
     tags:
-      - 'v*'  # Triggers on tags like v1.0.0, v2.1.3, etc.
+      - 'v*'
 
 permissions:
-  contents: write  # This is the key addition!
+  contents: write
 
 jobs:
   build:
@@ -33,14 +33,19 @@ jobs:
       - name: Build release
         run: cargo build --release
 
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: good_first_rust
-          path: target/release/good_first_rust
+      - name: Create release archive
+        run: |
+          mkdir -p release-package/static
+          cp target/release/good_first_rust release-package/
+          cp static/index.html release-package/static/
+          tar -czf good_first_rust-linux.tar.gz -C release-package .
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/release/good_first_rust
+          files: |
+            good_first_rust-linux.tar.gz
+            target/release/good_first_rust
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
