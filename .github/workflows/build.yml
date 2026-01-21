@@ -35,3 +35,9 @@ jobs:
         with:
           name: good_first_rust
           path: target/release/good_first_rust
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: target/release/good_first_rust
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
