@@ -326,7 +326,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gh-issue-browser"
+name = "good_first_rust"
 version = "0.1.0"
 dependencies = [
  "axum",

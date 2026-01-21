@@ -36,10 +36,13 @@ pub async fn start_server() {
         .expect("Server error");
 }
 
+const MAX_PAGE: i64 = 4;
+
 async fn get_issues(
     Query(params): Query<PaginationParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let page = params.page.unwrap_or(1).max(1);
+    // Limit page to MAX_PAGE (4)
+    let page = params.page.unwrap_or(1).max(1).min(MAX_PAGE);
     let min_stars = params.min_stars.unwrap_or(50);
     let per_page = 30i64;
 

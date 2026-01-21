@@ -6,7 +6,7 @@ pub struct Issue {
     pub repo_name: String,
     pub url: String,
     pub creator: String,
-    pub created_at: String,
+    pub created_at: i64, // Unix timestamp (seconds)
     pub title: String,
     pub labels: String,
     pub star_count: i64,
@@ -17,7 +17,7 @@ pub struct GitHubIssue {
     pub url: String,
     pub title: String,
     pub user: GitHubUser,
-    pub created_at: String,
+    pub created_at: String, // Keep as string for GitHub API response
     pub labels: Vec<GitHubLabel>,
     pub repository_url: String,
 }
@@ -47,7 +47,7 @@ pub struct StargazerCount {
     #[allow(dead_code)]
     pub repo_name: String,
     pub star_count: i64,
-    pub updated_at: String,
+    pub updated_at: i64, // Unix timestamp (seconds)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

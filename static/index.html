@@ -49,21 +49,26 @@
     </div>
 
     <script>
+        const MAX_PAGE = 4;
         let currentPage = 1;
         let totalPages = 1;
         let currentMinStars = 50;
 
         async function fetchIssues(page = 1) {
+            // Limit page to MAX_PAGE
+            page = Math.min(page, MAX_PAGE);
+            
             try {
                 const response = await fetch(`/api/issues?page=${page}&min_stars=${currentMinStars}`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const data = await response.json();
                 currentPage = data.page;
-                totalPages = data.total_pages;
+                // Limit totalPages display to MAX_PAGE
+                totalPages = Math.min(data.total_pages, MAX_PAGE);
                 
                 renderIssues(data.issues);
-                renderPagination(data.page, data.total_pages, data.total_count);
+                renderPagination(data.page, Math.min(data.total_pages, MAX_PAGE), data.total_count);
                 
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('error').classList.add('hidden');
@@ -200,8 +205,9 @@
             }
         }
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
+        function formatDate(timestamp) {
+            // Handle Unix timestamp (seconds) - multiply by 1000 for milliseconds
+            const date = new Date(timestamp * 1000);
             return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         }
 

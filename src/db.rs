@@ -21,11 +21,11 @@ pub fn init_db() -> SqlResult<()> {
             repo_name TEXT NOT NULL,
             url TEXT NOT NULL UNIQUE,
             creator TEXT NOT NULL,
-            created_at TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
             title TEXT NOT NULL,
             labels TEXT NOT NULL,
             star_count INTEGER NOT NULL,
-            inserted_at TEXT NOT NULL
+            inserted_at INTEGER NOT NULL
         )",
         [],
     )?;
@@ -35,7 +35,7 @@ pub fn init_db() -> SqlResult<()> {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             repo_name TEXT NOT NULL UNIQUE,
             star_count INTEGER NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at INTEGER NOT NULL
         )",
         [],
     )?;
@@ -66,13 +66,13 @@ pub fn get_stargazer_count(repo_name: &str) -> SqlResult<Option<StargazerCount>>
 
 pub fn insert_or_update_stargazer_count(repo_name: &str, star_count: i64) -> SqlResult<()> {
     let conn = DB.lock().unwrap();
-    let now = Utc::now().to_rfc3339();
+    let now = Utc::now().timestamp();
 
     conn.execute(
-        "INSERT INTO stargazer_counts (repo_name, star_count, updated_at) 
+        "INSERT INTO stargazer_counts (repo_name, star_count, updated_at)
          VALUES (?1, ?2, ?3)
          ON CONFLICT(repo_name) DO UPDATE SET star_count = ?2, updated_at = ?3",
-        [repo_name, &star_count.to_string(), &now],
+        rusqlite::params![repo_name, star_count, now],
     )?;
 
     Ok(())
@@ -80,7 +80,7 @@ pub fn insert_or_update_stargazer_count(repo_name: &str, star_count: i64) -> Sql
 
 pub fn insert_issue(issue: &Issue) -> SqlResult<()> {
     let conn = DB.lock().unwrap();
-    let now = Utc::now().to_rfc3339();
+    let now = Utc::now().timestamp();
 
     conn.execute(
         "INSERT OR IGNORE INTO issues (repo_name, url, creator, created_at, title, labels, star_count, inserted_at)
@@ -89,7 +89,7 @@ pub fn insert_issue(issue: &Issue) -> SqlResult<()> {
             &issue.repo_name,
             &issue.url,
             &issue.creator,
-            &issue.created_at,
+            issue.created_at,
             &issue.title,
             &issue.labels,
             issue.star_count,
