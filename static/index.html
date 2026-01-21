@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Rust Issues - Good First Issues</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-6xl mx-auto py-8 px-4">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Good First Issues</h1>
+            <p class="text-gray-600 text-lg">Latest open Rust issues perfect for getting started</p>
+        </header>
+
+        <div id="loading" class="text-center py-12">
+            <div class="inline-block">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+            <p class="text-gray-600 mt-4">Loading issues...</p>
+        </div>
+
+        <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+            <p class="text-red-800"></p>
+        </div>
+
+        <div id="content" class="hidden">
+            <div id="issues-container" class="space-y-4 mb-8">
+                <!-- Issues will be rendered here -->
+            </div>
+
+            <div id="pagination" class="flex justify-center items-center gap-2 flex-wrap">
+                <!-- Pagination controls will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+
+        async function fetchIssues(page = 1) {
+            try {
+                const response = await fetch(`/api/issues?page=${page}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                currentPage = data.page;
+                totalPages = data.total_pages;
+                
+                renderIssues(data.issues);
+                renderPagination(data.page, data.total_pages, data.total_count);
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error fetching issues:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('error').querySelector('p').textContent = `Failed to load issues: ${error.message}`;
+                document.getElementById('content').classList.add('hidden');
+            }
+        }
+
+        function renderIssues(issues) {
+            const container = document.getElementById('issues-container');
+            container.innerHTML = '';
+
+            if (issues.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-600 py-8">No issues found</p>';
+                return;
+            }
+
+            issues.forEach(issue => {
+                const labelElements = issue.labels
+                    .split(', ')
+                    .filter(label => label.trim() !== '')
+                    .map(label => `<span class="inline-block bg-gray-200 text-gray-800 px-2 py-1 rounded text-xs font-medium">${escapeHtml(label.trim())}</span>`)
+                    .join('');
+
+                const issueCard = `
+                    <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 border border-gray-200">
+                        <div class="mb-3">
+                            <a href="${escapeHtml(issue.url)}" target="_blank" rel="noopener noreferrer" class="text-lg font-semibold text-blue-600 hover:text-blue-800 break-words">
+                                ${escapeHtml(issue.title)}
+                            </a>
+                        </div>
+                        
+                        <div class="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                            <span>
+                                <span class="font-medium">Repository:</span>
+                                <a href="https://github.com/${escapeHtml(issue.repo_name)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">
+                                    ${escapeHtml(issue.repo_name)}
+                                </a>
+                            </span>
+                            <span>
+                                <span class="font-medium">⭐</span>
+                                <span>${issue.star_count.toLocaleString()}</span>
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                            <span><span class="font-medium">By:</span> ${escapeHtml(issue.creator)}</span>
+                            <span><span class="font-medium">Created:</span> ${formatDate(issue.created_at)}</span>
+                        </div>
+
+                        ${labelElements ? `<div class="flex flex-wrap gap-2">${labelElements}</div>` : ''}
+                    </div>
+                `;
+                container.innerHTML += issueCard;
+            });
+        }
+
+        function renderPagination(page, totalPages, totalCount) {
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+
+            const infoDiv = `<div class="text-gray-600 text-sm mr-4">Page ${page} of ${totalPages} (${totalCount} total issues)</div>`;
+            container.innerHTML += infoDiv;
+
+            // Previous button
+            if (page > 1) {
+                const prevBtn = `<button onclick="fetchIssues(${page - 1})" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">← Previous</button>`;
+                container.innerHTML += prevBtn;
+            } else {
+                const prevBtn = `<button disabled class="px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed">← Previous</button>`;
+                container.innerHTML += prevBtn;
+            }
+
+            // Page numbers
+            const startPage = Math.max(1, page - 2);
+            const endPage = Math.min(totalPages, page + 2);
+
+            if (startPage > 1) {
+                const firstBtn = `<button onclick="fetchIssues(1)" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">1</button>`;
+                container.innerHTML += firstBtn;
+                if (startPage > 2) {
+                    container.innerHTML += '<span class="px-2 py-2">...</span>';
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === page) {
+                    const activeBtn = `<button class="px-3 py-2 bg-blue-600 text-white rounded">${i}</button>`;
+                    container.innerHTML += activeBtn;
+                } else {
+                    const pageBtn = `<button onclick="fetchIssues(${i})" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">${i}</button>`;
+                    container.innerHTML += pageBtn;
+                }
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    container.innerHTML += '<span class="px-2 py-2">...</span>';
+                }
+                const lastBtn = `<button onclick="fetchIssues(${totalPages})" class="px-3 py-2 border border-gray-300 rounded hover:bg-gray-100">${totalPages}</button>`;
+                container.innerHTML += lastBtn;
+            }
+
+            // Next button
+            if (page < totalPages) {
+                const nextBtn = `<button onclick="fetchIssues(${page + 1})" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Next →</button>`;
+                container.innerHTML += nextBtn;
+            } else {
+                const nextBtn = `<button disabled class="px-4 py-2 bg-gray-300 text-gray-600 rounded cursor-not-allowed">Next →</button>`;
+                container.innerHTML += nextBtn;
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load issues on page load
+        fetchIssues(1);
+    </script>
+</body>
+</html>
