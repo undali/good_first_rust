@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'  # Triggers on tags like v1.0.0, v2.1.3, etc.
 
+permissions:
+  contents: write  # This is the key addition!
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +20,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -31,12 +34,12 @@ jobs:
         run: cargo build --release
 
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: good_first_rust
           path: target/release/good_first_rust
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: target/release/good_first_rust
         env:
