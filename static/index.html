@@ -13,6 +13,19 @@
             <p class="text-gray-600 text-lg">Latest open Rust issues perfect for getting started</p>
         </header>
 
+        <div class="mb-6 bg-white rounded-lg shadow p-4 border border-gray-200">
+            <label class="block text-sm font-medium text-gray-700 mb-3">Filter by Minimum Stars</label>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="filterByStars(0)" class="min-stars-btn px-4 py-2 border border-gray-300 rounded hover:bg-gray-100" data-stars="0">0+</button>
+                <button onclick="filterByStars(10)" class="min-stars-btn px-4 py-2 border border-gray-300 rounded hover:bg-gray-100" data-stars="10">10+</button>
+                <button onclick="filterByStars(20)" class="min-stars-btn px-4 py-2 border border-gray-300 rounded hover:bg-gray-100" data-stars="20">20+</button>
+                <button onclick="filterByStars(50)" class="min-stars-btn px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 bg-blue-600 text-white" data-stars="50">50+ (default)</button>
+                <button onclick="filterByStars(100)" class="min-stars-btn px-4 py-2 border border-gray-300 rounded hover:bg-gray-100" data-stars="100">100+</button>
+                <button onclick="filterByStars(500)" class="min-stars-btn px-4 py-2 border border-gray-300 rounded hover:bg-gray-100" data-stars="500">500+</button>
+                <button onclick="filterByStars(1000)" class="min-stars-btn px-4 py-2 border border-gray-300 rounded hover:bg-gray-100" data-stars="1000">1000+</button>
+            </div>
+        </div>
+
         <div id="loading" class="text-center py-12">
             <div class="inline-block">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -38,10 +51,11 @@
     <script>
         let currentPage = 1;
         let totalPages = 1;
+        let currentMinStars = 50;
 
         async function fetchIssues(page = 1) {
             try {
-                const response = await fetch(`/api/issues?page=${page}`);
+                const response = await fetch(`/api/issues?page=${page}&min_stars=${currentMinStars}`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const data = await response.json();
@@ -61,6 +75,24 @@
                 document.getElementById('error').querySelector('p').textContent = `Failed to load issues: ${error.message}`;
                 document.getElementById('content').classList.add('hidden');
             }
+        }
+
+        function filterByStars(stars) {
+            currentMinStars = stars;
+            currentPage = 1;
+
+            // Update button styles
+            document.querySelectorAll('.min-stars-btn').forEach(btn => {
+                if (parseInt(btn.dataset.stars) === stars) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('border-gray-300', 'hover:bg-gray-100');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('border-gray-300', 'hover:bg-gray-100');
+                }
+            });
+
+            fetchIssues(1);
         }
 
         function renderIssues(issues) {

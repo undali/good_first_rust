@@ -16,6 +16,7 @@ use crate::db;
 #[derive(Deserialize)]
 pub struct PaginationParams {
     page: Option<i64>,
+    min_stars: Option<i64>,
 }
 
 pub async fn start_server() {
@@ -23,7 +24,7 @@ pub async fn start_server() {
         .route("/api/issues", get(get_issues))
         .nest_service("/", ServeDir::new("static"));
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 27412));
     tracing::info!("Server listening on http://{}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr)
@@ -39,9 +40,10 @@ async fn get_issues(
     Query(params): Query<PaginationParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let page = params.page.unwrap_or(1).max(1);
+    let min_stars = params.min_stars.unwrap_or(50);
     let per_page = 30i64;
 
-    match db::get_paginated_issues(page, per_page) {
+    match db::get_paginated_issues(page, per_page, min_stars) {
         Ok((issues, total_count)) => {
             let total_pages = (total_count + per_page - 1) / per_page;
             

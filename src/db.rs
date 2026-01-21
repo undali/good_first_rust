@@ -100,26 +100,27 @@ pub fn insert_issue(issue: &Issue) -> SqlResult<()> {
     Ok(())
 }
 
-pub fn get_paginated_issues(page: i64, per_page: i64) -> SqlResult<(Vec<Issue>, i64)> {
+pub fn get_paginated_issues(page: i64, per_page: i64, min_stars: i64) -> SqlResult<(Vec<Issue>, i64)> {
     let conn = DB.lock().unwrap();
 
-    // Get total count
+    // Get total count with filter
     let total_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM issues",
-        [],
+        "SELECT COUNT(*) FROM issues WHERE star_count >= ?1",
+        [min_stars],
         |row| row.get(0),
     )?;
 
-    // Get paginated issues (latest first)
+    // Get paginated issues (latest first) with filter
     let offset = (page - 1) * per_page;
     let mut stmt = conn.prepare(
         "SELECT id, repo_name, url, creator, created_at, title, labels, star_count 
          FROM issues 
+         WHERE star_count >= ?1
          ORDER BY created_at DESC 
-         LIMIT ?1 OFFSET ?2"
+         LIMIT ?2 OFFSET ?3"
     )?;
 
-    let issues = stmt.query_map([per_page, offset], |row| {
+    let issues = stmt.query_map([min_stars, per_page, offset], |row| {
         Ok(Issue {
             id: row.get(0)?,
             repo_name: row.get(1)?,
