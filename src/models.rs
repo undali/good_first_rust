@@ -14,7 +14,7 @@ pub struct Issue {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitHubIssue {
-    pub url: String,
+    pub html_url: String,
     pub title: String,
     pub user: GitHubUser,
     pub created_at: String, // Keep as string for GitHub API response
